@@ -1,6 +1,6 @@
 import Article from './Article';
 import Loader from './Loader'
-import {useState,useEffect,Fragment} from 'react';
+import {useState,useEffect,useRef,Fragment} from 'react';
 import {Input,AppBar,Grid,Button,TextareaAutosize,Toolbar } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
@@ -10,6 +10,7 @@ import useInfiniteScroll from '../hooks/useInfiniteScroll';
 const Queue = (props) => {
 
 	const hrURL = "https://hn.algolia.com/api/v1/search";
+	const inputRef = useRef(null);
 
 	const parseArticle = (hit) => {
 		return hit
@@ -20,18 +21,26 @@ const Queue = (props) => {
 			url:(hit.url ||hit.story_url),
 			size: "small",
 			title: (hit.title || hit.story_title),
+			ended: false,
 		} :
 		null;
 	}
 
-	const generateArticles = async () => {
-		const data = await fetch(`${hrURL}?query=${searchValue}&page=${hrPage}&hitsPerPage=5`)
+	const generateArticles = async (page) => {
+		const hp = page !== undefined ? page : hrPage;
+		const data = await fetch(`${hrURL}?query=${searchValue}&page=${hp}&hitsPerPage=5`)
+		//console.log(hp);
 		const f = await data.json();
-		console.log(f);
+		//console.log(f);
 		if (!f.hits || f.hits.length === 0) {
-			setArticleList((prevState)=>([...prevState]));
+			setArticleList((prevState)=>{
+				if (prevState.length> 0 && prevState[prevState.length-1].ended) {
+					return prevState;
+				} 
+				return ([...prevState,{ended:true}])
+			});
 		}
-		setHRPage((prevState)=>(prevState+1));
+		setHRPage((prevState)=>(hp+1));
 		setArticleList((prevState)=>([...prevState,...f.hits.map((hit)=>parseArticle(hit))]));
 		setIsLoading(false);
 	}
@@ -48,7 +57,11 @@ const Queue = (props) => {
 		useInfiniteScroll(generateArticles);
 
 	useEffect(()=>{
-		if (!started) return;
+
+		if (!started) {
+			inputRef.current.focus();
+			return;
+		}
 		generateArticles();
 	},[started])
 
@@ -94,7 +107,7 @@ const Queue = (props) => {
 		return (a && <Article url={a.url}
 		                 key={i}
 		                 title={a.title}
-
+		                 ended={a.ended}
 		                 cardSize={a.size} />);
 		});
 
@@ -107,10 +120,12 @@ const Queue = (props) => {
 					<Input edge="start" className={classes.input} variant="outlined"
 							   placeholder="?"
 							   value={searchValue}
+							   ref={inputRef}
 							   onChange={(event)=>{setHRPage(0);setSearchValue(event.target.value)}}/>
 					<Button
 					className={classes.refresh}
-							onClick={()=>{setArticleList([]); generateArticles()}}
+							onClick={()=>{
+								setHRPage(0);setArticleList([]);window.scrollBy(0,100);}}
 						    variant="contained"
 						    color="secondary"
 						>
@@ -123,16 +138,16 @@ const Queue = (props) => {
 				<Grid item xs={12}>
 
 					{articles}
-					{isLoading && <div>Loading</div>}
+					{isLoading && <Loader/>}
 				</Grid>
 
 			</Grid>
 		</Fragment> :
 		<Grid container spacing={2} className={classes.full_container}>
 			<Grid item xs={12}>
-				<TextareaAutosize
+				<TextareaAutosize ref={inputRef}
 						   className={classes.full_input}
-						   placeholder="what do you want to dig into?"
+						   placeholder="what tech do you want to dig into?"
 						   value={searchValue}
 						   onChange={(event)=>{setHRPage(0);setSearchValue(event.target.value)}}/>
 			</Grid>

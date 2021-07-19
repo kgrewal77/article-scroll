@@ -1,19 +1,6 @@
-import { Card, CardContent } from '@material-ui/core';
+import { Card, CardContent, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import Loader from './Loader'
 
-// import {
-//   EmailShareButton,
-//   FacebookShareButton,
-//   LinkedinShareButton,
-//   RedditShareButton,
-//   TwitterShareButton,
-//   EmailIcon,
-//   FacebookIcon,
-//   LinkedinIcon,
-//   RedditIcon,
-//   TwitterIcon,
-// } from "react-share";
 import { LinkPreview } from '@dhaiwat10/react-link-preview';
 
 const Article = (props) => {
@@ -27,7 +14,18 @@ const Article = (props) => {
 	  // },
 	  card: {
 	    minHeight: "25vh",
-	    minWidth: "50vh"
+	    //minWidth: "25vh",
+	    maxHeight: "100vh",
+	    maxWidth: "100vw",
+	  },
+	  placeholder:{
+		    minHeight: "0vh",
+		    minWidth: "0vh",
+		    maxHeight: "0vh",
+		    maxWidth:"0vw",	  
+		},
+	  nodata:{
+	  	height:"99vh",
 	  },
 	  icon: {
 	  	paddingLeft: "1vw",
@@ -39,10 +37,23 @@ const Article = (props) => {
 	const classes = useStyles();
 
 	return (
-		<Card  className={classes.card}>
+		<Card >
+			{!props.ended ?
 			<CardContent>
-				<LinkPreview className={classes.card} fallback={<div/>} url={props.url} />
-			</CardContent>
+				<LinkPreview 
+					className={classes.card} 
+					fallback={<div className={classes.placeholder}/>} 
+					url={props.url} /> 
+			</CardContent> :
+			<CardContent className={classes.nodata}>
+				<Typography variant="h5" component="h2">
+					No Results Found
+				</Typography>
+				<Typography color="textSecondary">
+		          try refreshing or entering another search term
+		        </Typography>
+	        </CardContent>
+				}
 		</Card>
 	  );
 }
